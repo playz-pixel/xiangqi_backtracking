@@ -1,0 +1,113 @@
+
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cờ Tướng — Backtracking AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='vendor/chart.umd.js') }}"></script>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar">
+      <div>
+        <h1>♜ Cờ Tướng — Backtracking AI</h1>
+        <p>Mô phỏng trò chơi bằng Python + Flask + SVG, AI tìm nước bằng Backtracking/Minimax + Alpha-Beta.</p>
+      </div>
+      <div class="controls">
+        <label>Độ sâu AI
+          <select id="depth">
+            <option value="1">1 — nhanh</option>
+            <option value="2" selected>2 — cân bằng</option>
+            <option value="3">3 — mạnh hơn</option>
+            <option value="4">4 — chậm</option>
+            <option value="5">5 — Siêu khó (tìm chiếu bí nhanh nhất)</option>
+          </select>
+        </label>
+        <button id="newGame">Ván mới</button>
+        <button id="toggleMode" class="mode-btn">Chế độ: Người vs Backtracking</button>
+        <button id="aiMove">AI đi</button>
+        <button id="aiVsAiStep" hidden>Chạy 1 nước</button>
+        <button id="aiVsAiRun" hidden>Tự động 10 nước</button>
+        <button id="viewSearch">Biểu đồ nước đi</button>
+        <button id="viewCompare" hidden>Biểu đồ so sánh</button>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="board-card">
+        <div id="status" class="status">Đang tải...</div>
+        <div id="boardWrap" class="board-wrap"></div>
+      </div>
+
+      <aside class="side">
+        <div class="panel" id="modeInfoPanel">
+          <h2>Chế độ hiện tại</h2>
+          <p id="modeInfo">Người (Đỏ) đấu với Backtracking (Đen).</p>
+        </div>
+        <div class="panel">
+          <h2>Hướng dẫn</h2>
+          <ol id="guideList">
+            <li>Đỏ là người chơi, Đen là AI.</li>
+            <li>Click vào quân cờ để xem các ô đi hợp lệ.</li>
+            <li>Các chấm tròn là nước có thể đi.</li>
+            <li>Click ô đích để thực hiện nước đi.</li>
+            <li>Sau khi Đỏ đi, AI tự động tìm nước bằng Backtracking. Quân Đen vừa đi sẽ <b>sáng lên</b> để dễ nhận biết.</li>
+          </ol>
+        </div>
+        <div class="panel">
+          <h2>Thông tin thuật toán</h2>
+          <ul>
+            <li>Sinh nước đi hợp lệ theo luật cờ tướng.</li>
+            <li>Lọc nước khiến tướng mình bị chiếu.</li>
+            <li>Đệ quy Minimax = Backtracking.</li>
+            <li>Alpha-Beta cắt nhánh để giảm số nút.</li>
+            <li>Hàm đánh giá dựa trên giá trị quân + vị trí.</li>
+            <li>Chống lặp nước bằng đếm số lần xuất hiện vị trí (Zobrist hashing).</li>
+            <li>Siêu khó: Iterative Deepening, dừng ngay khi thấy chiếu bí bắt buộc.</li>
+            <li>Độ phức tạp không gian: Backtracking O(b×m) vs BFS O(b^d) — xem "Biểu đồ so sánh".</li>
+          </ul>
+        </div>
+        <div class="panel stats">
+          <div><span>Lượt</span><b id="turn">—</b></div>
+          <div><span>Nước đã đi</span><b id="history">0</b></div>
+          <div><span>Trạng thái</span><b id="check">Bình thường</b></div>
+          <div><span>Nút Backtracking đã duyệt</span><b id="lastNodes">—</b></div>
+          <div><span>Thời gian tìm nước</span><b id="lastTime">—</b></div>
+          <div><span>Độ sâu đạt được</span><b id="lastDepth">—</b></div>
+          <div><span>Chiếu bí trong (ply)</span><b id="lastMateIn">—</b></div>
+          <div><span>Bộ nhớ ước tính</span><b id="lastMemory">—</b></div>
+        </div>
+      </aside>
+    </section>
+
+    <div id="searchPanel" class="search-panel" hidden>
+      <div class="search-panel-box">
+        <div class="search-panel-head">
+          <h2>Biểu đồ nước đi — các nước Đen được Backtracking duyệt</h2>
+          <button id="closeSearch">Đóng</button>
+        </div>
+        <div id="searchSummary" class="search-summary"></div>
+        <div class="chart-wrap"><canvas id="searchChart" height="220"></canvas></div>
+        <ol id="searchLog" class="search-log"></ol>
+      </div>
+    </div>
+
+    <div id="comparePanel" class="search-panel" hidden>
+      <div class="search-panel-box">
+        <div class="search-panel-head">
+          <h2>Biểu đồ so sánh: Backtracking (Đen) vs BFS (Đỏ)</h2>
+          <button id="closeCompare">Đóng</button>
+        </div>
+        <div id="compareSummary" class="search-summary"></div>
+        <div class="chart-wrap"><canvas id="compareNodesChart" height="220"></canvas></div>
+        <div class="chart-wrap"><canvas id="compareTimeChart" height="220"></canvas></div>
+        <div class="chart-wrap"><canvas id="compareScoreChart" height="220"></canvas></div>
+        <div class="chart-wrap"><canvas id="compareMemoryChart" height="220"></canvas></div>
+      </div>
+    </div>
+  </main>
+  <script src="{{ url_for('static', filename='app.js', v='5') }}"></script>
+</body>
+</html>
